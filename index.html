@@ -82,8 +82,10 @@ h1{font-family:'Nanum Myeongjo',serif;font-size:1.65rem;font-weight:800;color:va
 .hn{font-size:.4rem;color:var(--hol);text-align:center;line-height:1.1;max-width:96%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-top:1px;font-weight:700;}
 .cy.to .hn{color:rgba(255,210,210,.95);}
 /* CALENDAR MEMO */
-.cm2{font-size:.46rem;color:var(--br);text-align:center;line-height:1.1;max-width:96%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-top:1px;opacity:.8;}
-.cy.to .cm2{color:rgba(255,240,220,.9);}
+.cm2-wrap{display:flex;flex-direction:column;gap:1px;width:96%;margin-top:1px;}
+.cm2{font-size:.58rem;color:var(--br);text-align:center;line-height:1.2;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:700;padding:0 1px;}
+.cm2.type-work{color:#1565c0;} .cm2.type-plan{color:#7d3c98;} .cm2.type-memo{color:#8b5e3c;} .cm2.type-imp{color:#c0392b;}
+.cy.to .cm2{color:rgba(255,240,220,.95)!important;}
 .dr{display:flex;gap:1px;margin-top:1px;justify-content:center;flex-wrap:wrap;max-width:26px;}
 .do{width:3px;height:3px;border-radius:50%;}
 .cy.to .do{background:rgba(255,255,255,.8)!important;}
@@ -268,12 +270,26 @@ li.ic.ph{border-left:3px solid #e74c3c;} li.ic.pm{border-left:3px solid #f39c12;
 
 <!-- 달력 메모 모달 -->
 <div class="modal-bg" id="cmb" onclick="closeCM()"></div>
-<div class="modal" id="cm">
-  <h3 id="cm-title">📅 날짜 메모</h3>
-  <textarea id="cm-ta" placeholder="이 날의 간단한 메모를 입력하세요...&#10;(달력에 표시됩니다)" style="min-height:90px;"></textarea>
-  <div class="modal-btns">
-    <button class="mb-cancel" onclick="closeCM()">취소</button>
-    <button class="mb-ok" onclick="saveCM()">저장</button>
+<div class="modal" id="cm" style="width:min(96vw,420px);max-height:90vh;overflow-y:auto;">
+  <h3 id="cm-title" style="margin-bottom:10px;">📅 날짜 메모</h3>
+  <!-- 메모 목록 -->
+  <div id="cm-list" style="margin-bottom:12px;"></div>
+  <!-- 새 메모 추가 -->
+  <div style="background:var(--cr);border-radius:10px;padding:11px;border:1px solid rgba(139,94,60,.15);">
+    <div style="font-size:.72rem;font-weight:700;color:var(--br);margin-bottom:7px;">➕ 메모 추가</div>
+    <div style="display:flex;gap:6px;margin-bottom:7px;flex-wrap:wrap;">
+      <select id="cm-type" style="flex:1;min-width:100px;padding:7px 10px;border:1.5px solid rgba(139,94,60,.22);border-radius:8px;font-family:'Nanum Gothic',sans-serif;font-size:.83rem;background:var(--cr);color:var(--dk);-webkit-appearance:none;">
+        <option value="memo">📝 일반 메모</option>
+        <option value="work">💼 업무</option>
+        <option value="plan">📋 계획</option>
+        <option value="imp">⭐ 중요</option>
+      </select>
+    </div>
+    <input type="text" id="cm-inp" placeholder="메모 내용을 입력하세요..." style="width:100%;margin-bottom:7px;"/>
+    <button onclick="addCM()" style="width:100%;padding:9px;background:var(--or);color:white;border:none;border-radius:8px;font-family:'Nanum Gothic',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;">메모 추가</button>
+  </div>
+  <div class="modal-btns" style="margin-top:10px;">
+    <button class="mb-cancel" onclick="closeCM()">닫기</button>
   </div>
 </div>
 
@@ -311,6 +327,19 @@ li.ic.ph{border-left:3px solid #e74c3c;} li.ic.pm{border-left:3px solid #f39c12;
     <span style="color:var(--br);opacity:.8;">📝 메모</span>
   </div>
   <div style="margin-top:8px;font-size:.7rem;color:var(--br);opacity:.65;text-align:center;">💡 날짜를 길게 누르면 달력 메모를 추가할 수 있어요</div>
+  <!-- 데이터 동기화 (내보내기/가져오기) -->
+  <div style="margin-top:12px;padding-top:11px;border-top:1px dashed rgba(139,94,60,.18);">
+    <div style="font-size:.72rem;font-weight:700;color:var(--br);margin-bottom:8px;">🔄 PC ↔ 앱 데이터 동기화</div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;">
+      <button onclick="exportData()" style="flex:1;min-width:120px;padding:9px 10px;background:var(--in);color:white;border:none;border-radius:9px;font-family:'Nanum Gothic',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;">📤 데이터 내보내기</button>
+      <button onclick="document.getElementById('import-file').click()" style="flex:1;min-width:120px;padding:9px 10px;background:var(--tl);color:white;border:none;border-radius:9px;font-family:'Nanum Gothic',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;">📥 데이터 가져오기</button>
+      <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)"/>
+    </div>
+    <div style="font-size:.63rem;color:var(--br);opacity:.6;margin-top:6px;line-height:1.6;">
+      📤 내보내기: 현재 기기의 모든 데이터를 .json 파일로 저장<br>
+      📥 가져오기: 다른 기기에서 내보낸 .json 파일을 불러와 동기화
+    </div>
+  </div>
 </div>
 
 <!-- ══ 다이어리 카드 ══ -->
@@ -554,8 +583,20 @@ function renderCal(){
 
     if(hol){ const hn=document.createElement('div'); hn.className='hn'; hn.textContent=hol; el.appendChild(hn); }
 
-    // calendar memo
-    if(dd.calMemo){ const mn=document.createElement('div'); mn.className='cm2'; mn.textContent=dd.calMemo; el.appendChild(mn); }
+    // calendar memos (multiple)
+    const memos = dd.calMemos || (dd.calMemo ? [{id:1,type:'memo',text:dd.calMemo}] : []);
+    if(memos.length){
+      const mwrap=document.createElement('div'); mwrap.className='cm2-wrap';
+      const MEMO_PFX={memo:'📝',work:'💼',plan:'📋',imp:'⭐'};
+      memos.slice(0,2).forEach(m=>{
+        const mn=document.createElement('div');
+        mn.className='cm2 type-'+m.type;
+        mn.textContent=(MEMO_PFX[m.type]||'📝')+' '+m.text;
+        mwrap.appendChild(mn);
+      });
+      if(memos.length>2){ const more=document.createElement('div'); more.className='cm2'; more.style.opacity='.6'; more.textContent='+'+(memos.length-2)+'개 더'; mwrap.appendChild(more); }
+      el.appendChild(mwrap);
+    }
 
     // dots
     const dots=[ (dd.works||[]).some(i=>i.type==='biz')&&'biz', (dd.works||[]).some(i=>i.type==='per')&&'per', (dd.works||[]).some(i=>i.type==='done')&&'done', (dd.checks||[]).length&&'check', (dd.scheds||[]).length&&'sched', (dd.workouts||[]).length&&'workout', (dd.studies||[]).length&&'study' ].filter(Boolean);
@@ -572,18 +613,95 @@ function renderCal(){
 }
 function moveM(dir){ calM+=dir; if(calM<0){calM=11;calY--;} if(calM>11){calM=0;calY++;} renderCal(); }
 
-/* ══ CAL MEMO ══ */
+/* ══ CAL MEMO (다중) ══ */
 let cmKey='';
+const MEMO_COLORS={memo:'#8b5e3c',work:'#1565c0',plan:'#7d3c98',imp:'#c0392b'};
+const MEMO_LABELS={memo:'📝 일반 메모',work:'💼 업무',plan:'📋 계획',imp:'⭐ 중요'};
 function openCM(key){
-  cmKey=key; const [y,mo,d]=key.split('-').map(Number);
+  cmKey=key;
+  const [y,mo,d]=key.split('-').map(Number);
   document.getElementById('cm-title').textContent='📅 '+y+'년 '+mo+'월 '+d+'일 메모';
-  document.getElementById('cm-ta').value=getDay(key).calMemo||'';
+  document.getElementById('cm-inp').value='';
+  renderCMList();
   document.getElementById('cmb').style.display='block';
   document.getElementById('cm').style.display='block';
-  setTimeout(()=>document.getElementById('cm-ta').focus(),100);
+  setTimeout(()=>document.getElementById('cm-inp').focus(),120);
 }
 function closeCM(){ document.getElementById('cmb').style.display='none'; document.getElementById('cm').style.display='none'; }
-function saveCM(){ const data=getDay(cmKey); data.calMemo=document.getElementById('cm-ta').value.trim(); saveDay(cmKey,data); closeCM(); renderCal(); }
+function renderCMList(){
+  const data=getDay(cmKey);
+  // migrate old single memo
+  if(data.calMemo && !data.calMemos){ data.calMemos=[{id:Date.now(),type:'memo',text:data.calMemo}]; data.calMemo=''; saveDay(cmKey,data); }
+  const memos=data.calMemos||[];
+  const list=document.getElementById('cm-list');
+  if(!memos.length){ list.innerHTML='<div style="text-align:center;color:#bbb;font-size:.78rem;padding:10px 0;">메모가 없어요. 아래에서 추가해보세요!</div>'; return; }
+  list.innerHTML=memos.map(m=>`
+    <div style="display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:9px;margin-bottom:6px;background:${MEMO_COLORS[m.type]}14;border:1.5px solid ${MEMO_COLORS[m.type]}30;">
+      <span style="font-size:.75rem;font-weight:700;color:${MEMO_COLORS[m.type]};flex-shrink:0;">${MEMO_LABELS[m.type]}</span>
+      <span style="flex:1;font-size:.85rem;color:var(--dk);">${esc(m.text)}</span>
+      <button onclick="editCM(${m.id})" style="background:rgba(224,122,58,.12);color:var(--or);border:none;border-radius:6px;padding:4px 7px;font-size:.72rem;cursor:pointer;">✏️</button>
+      <button onclick="delCM(${m.id})" style="background:transparent;color:#ccc;border:none;border-radius:6px;padding:4px 7px;font-size:.82rem;cursor:pointer;">✕</button>
+    </div>`).join('');
+}
+function addCM(){
+  const text=document.getElementById('cm-inp').value.trim(); if(!text) return;
+  const type=document.getElementById('cm-type').value;
+  const data=getDay(cmKey);
+  if(!data.calMemos) data.calMemos=[];
+  data.calMemos.push({id:Date.now(),type,text});
+  saveDay(cmKey,data);
+  document.getElementById('cm-inp').value='';
+  renderCMList(); renderCal();
+}
+function delCM(id){
+  const data=getDay(cmKey); data.calMemos=(data.calMemos||[]).filter(m=>m.id!==id);
+  saveDay(cmKey,data); renderCMList(); renderCal();
+}
+function editCM(id){
+  const data=getDay(cmKey); const m=(data.calMemos||[]).find(m=>m.id===id); if(!m) return;
+  const newText=prompt('메모 수정:', m.text); if(newText===null) return;
+  m.text=newText.trim()||m.text; saveDay(cmKey,data); renderCMList(); renderCal();
+}
+
+/* ══ EXPORT / IMPORT ══ */
+function exportData(){
+  const allData=load();
+  const tags=JSON.parse(localStorage.getItem('custom_tags')||'{}');
+  const bundle={version:1,exportedAt:new Date().toISOString(),planner:allData,tags};
+  const blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='planner_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  showOT('📤 데이터가 저장되었어요!');
+}
+function importData(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const bundle=JSON.parse(ev.target.result);
+      if(!bundle.planner) throw new Error('올바른 백업 파일이 아니에요.');
+      if(!confirm('현재 기기의 데이터에 가져온 데이터를 병합할까요?\n(같은 날짜는 가져온 데이터로 덮어씁니다)')) return;
+      // merge: imported data overrides existing per day
+      const existing=load();
+      const merged=Object.assign({},existing,bundle.planner);
+      save(merged);
+      // merge tags
+      if(bundle.tags){
+        const curTags=JSON.parse(localStorage.getItem('custom_tags')||'{}');
+        if(bundle.tags.wo) curTags.wo=[...new Set([...(curTags.wo||[]),...bundle.tags.wo])];
+        if(bundle.tags.st) curTags.st=[...new Set([...(curTags.st||[]),...bundle.tags.st])];
+        localStorage.setItem('custom_tags',JSON.stringify(curTags));
+        allTags=loadTags();
+      }
+      renderCal(); renderPanel(); renderWorkout(); renderStudy();
+      showOT('📥 데이터를 성공적으로 가져왔어요!');
+    }catch(err){ alert('가져오기 실패: '+err.message); }
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
 
 /* ══ SELECT DATE ══ */
 function selectDate(y,m,d){ selKey=fmt(y,m,d); wTab='all'; renderCal(); renderPanel(); }
@@ -778,7 +896,7 @@ document.getElementById('ci-tx').addEventListener('keydown',e=>{ if(e.key==='Ent
 document.getElementById('woi-nt').addEventListener('keydown',e=>{ if(e.key==='Enter')addWorkout(); });
 document.getElementById('sti-nt').addEventListener('keydown',e=>{ if(e.key==='Enter')addStudy(); });
 document.getElementById('wx-city').addEventListener('keydown',e=>{ if(e.key==='Enter')fetchWx(); });
-document.getElementById('cm-ta').addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.ctrlKey)saveCM(); });
+document.getElementById('cm-inp').addEventListener('keydown',e=>{ if(e.key==='Enter')addCM(); });
 
 /* ══ INIT ══ */
 initScols();

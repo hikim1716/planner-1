@@ -1,0 +1,12 @@
+{
+  "name": "My Daily Planner",
+  "short_name": "Planner",
+  "description": "업무·일정·운동·공부를 하루에 기록하는 플래너",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f5e6d0",
+  "theme_color": "#e07a3a",
+  "orientation": "portrait",
+  "lang": "ko",
+  "categories": ["productivity", "lifestyle"]
+}
